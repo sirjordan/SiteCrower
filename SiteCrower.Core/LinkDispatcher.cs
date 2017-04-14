@@ -26,7 +26,7 @@ namespace SiteCrower.Core
         
         public string GetDomain(string rawUrl)
         {
-            if (rawUrl.StartsWith("/") || (!rawUrl.ToLower().StartsWith("http://") && !rawUrl.ToLower().StartsWith("https://")))
+            if (rawUrl.StartsWith("/") || (!rawUrl.ToLower().StartsWith("http://") && !rawUrl.ToLower().StartsWith("https://"))) 
             {
                 return GetDomain(root);
             }
