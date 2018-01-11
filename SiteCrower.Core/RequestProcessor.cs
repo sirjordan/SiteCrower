@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SiteCrower.Core
 {
+    // TODO: Make it asyncronous
     public class RequestProcessor
     {
         private readonly string pattern = "href=\"";
