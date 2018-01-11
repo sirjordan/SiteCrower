@@ -6,10 +6,10 @@ namespace SiteCrower.Core
     public class LinkDispatcher
     {
         private static readonly string validUrlPattern = @"^(http|https|ftp|)\://|[a-zA-Z0-9\-\.]+\.[a-zA-Z](:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$";
+        private static readonly string http = "http://";
+        private static readonly string https = "https://";
 
-        private readonly string root;
-        private readonly string http = "http://";
-        private readonly string https = "https://";
+        private string root;
 
         public LinkDispatcher(string root)
         {
