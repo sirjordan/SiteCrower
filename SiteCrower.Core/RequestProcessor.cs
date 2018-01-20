@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 
 namespace SiteCrower.Core
 {
@@ -37,15 +36,15 @@ namespace SiteCrower.Core
             int openIndex;
             int closeIndex;
 
-            while (links.Count > 0)
+            while (this.links.Count > 0)
             {
-                linkToVisit = links.Dequeue();
+                linkToVisit = this.links.Dequeue();
                 ProcessResult result = new ProcessResult() { Url = linkToVisit };
 
                 try
                 {
-                    linkToVisit = linkDispatcher.DecorateUrl(linkToVisit);
-                    content = webClient.DownloadString(linkToVisit);
+                    linkToVisit = this.linkDispatcher.DecorateUrl(linkToVisit);
+                    content = this.webClient.DownloadString(linkToVisit);
 
                     openIndex = content.IndexOf(pattern) + pattern.Length;
                     while (openIndex != -1)
@@ -54,8 +53,8 @@ namespace SiteCrower.Core
                         childLink = content.Substring(openIndex + pattern.Length, closeIndex - openIndex - pattern.Length);
                         if (ShouldVisit(childLink))
                         {
-                            links.Enqueue(childLink);
-                            visited.Add(childLink);
+                            this.links.Enqueue(childLink);
+                            this.visited.Add(childLink);
                         }
 
                         openIndex++;
@@ -77,6 +76,9 @@ namespace SiteCrower.Core
             }
         }
 
+        /// <summary>
+        /// Visit only links in the current domain
+        /// </summary>
         private bool ShouldVisit(string link)
         {
             if (!string.IsNullOrEmpty(link) && !escapeLinks.Contains(link) && !visited.Contains(link))
@@ -90,6 +92,9 @@ namespace SiteCrower.Core
             return false;
         }
 
+        /// <summary>
+        /// Defines if the root is https, http or invalid
+        /// </summary>
         private string EnsureProtocol(string siteRoot)
         {
             if (siteRoot.Contains(Constants.Http))
