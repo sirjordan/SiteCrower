@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 
 namespace SiteCrower.Core
 {
-    // TODO: Make it asyncronous
+    // TODO: 
+    // 1. Make it asyncronous
+    // 2. use HttpClient insead of WebClient
     public class RequestProcessor
     {
         private readonly string pattern = "href=\"";
@@ -24,15 +27,12 @@ namespace SiteCrower.Core
         public event EventHandler<ProcessResult> RequestProceed;
         public event EventHandler<TimeSpan> Finished;
 
-        public int OkUrls { get; private set; }
+        public int OkUrls { get { return this.LinksProcessed - (ErrorUrls.Count + FailedUrls.Count); } }
 
-        public int ErrorUrls { get; private set; }
+        public ICollection<string> ErrorUrls { get; private set; }
 
-        public int FailedUrls { get; private set; }
-
-        /// <summary>
-        /// Miliseconds
-        /// </summary>
+        public ICollection<string> FailedUrls { get; private set; }
+        
         public TimeSpan AvgResponseTime { get { return TimeSpan.FromMilliseconds(this.totalDownloadSpeedsTimes / this.LinksProcessed); } }
 
         /// <summary>
@@ -49,6 +49,8 @@ namespace SiteCrower.Core
             this.links = new Queue<string>(new string[] { root });
             this.visited = new List<string>();
             this.linkDispatcher = new LinkDispatcher(root);
+            this.ErrorUrls = new HashSet<string>();
+            this.FailedUrls = new HashSet<string>();
         }
 
         public void Start()
@@ -97,17 +99,16 @@ namespace SiteCrower.Core
                     }
 
                     result.Status = ProcessResultStatus.Ok;
-                    this.OkUrls++;
                 }
                 catch (WebException)
                 {
                     result.Status = ProcessResultStatus.Fail;
-                    this.FailedUrls++;
+                    this.FailedUrls.Add(linkToVisit);
                 }
                 catch (Exception)
                 {
                     result.Status = ProcessResultStatus.Error;
-                    this.ErrorUrls++;
+                    this.ErrorUrls.Add(linkToVisit);
                 }
 
                 this.RequestProceed?.Invoke(this, result);

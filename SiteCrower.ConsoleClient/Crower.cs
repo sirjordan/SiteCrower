@@ -72,7 +72,7 @@ namespace SiteCrower.ConsoleClient
             Console.WriteLine($"Url Processed: {requestProcessor.LinksProcessed} | Avg Responce: {requestProcessor.AvgResponseTime.TotalMilliseconds} ms | Avg Speed: {requestProcessor.AvgDownloadSpeed} KB/s");
             Console.WriteLine();
 
-            Console.WriteLine($"Ok: {requestProcessor.OkUrls} | Fail: {requestProcessor.FailedUrls} | Errors: {requestProcessor.ErrorUrls}");
+            Console.WriteLine($"Ok: {requestProcessor.OkUrls} | Fail: {requestProcessor.FailedUrls.Count} | Errors: {requestProcessor.ErrorUrls.Count}");
             Console.WriteLine();
         }
     }
