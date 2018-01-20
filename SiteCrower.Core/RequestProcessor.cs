@@ -18,6 +18,8 @@ namespace SiteCrower.Core
         private readonly string root;
 
         private DateTime startTime;
+        private int totalKBytesPerSecondReceived;
+        private int totalDownloadSpeedsTimes;
 
         public event EventHandler<ProcessResult> RequestProceed;
         public event EventHandler<TimeSpan> Finished;
@@ -25,19 +27,21 @@ namespace SiteCrower.Core
         /// <summary>
         /// Miliseconds
         /// </summary>
-        public TimeSpan AvgResponseTime { get; private set; }
+        public TimeSpan AvgResponseTime { get { return TimeSpan.FromMilliseconds(this.totalDownloadSpeedsTimes / this.LinksProcessed); } }
 
         /// <summary>
         /// KB / s
         /// </summary>
-        public int AvgDownloadSpeed { get; private set; }
+        public int AvgDownloadSpeed { get { return this.totalKBytesPerSecondReceived / this.LinksProcessed; } }
+
+        public int LinksProcessed { get; private set; }
 
         public RequestProcessor(string siteRoot)
         {
             this.webClient = new WebClient();
             this.root = this.EnsureProtocol(siteRoot);
             this.links = new Queue<string>(new string[] { root });
-            this.visited = new List<string>(); ;
+            this.visited = new List<string>();
             this.linkDispatcher = new LinkDispatcher(root);
         }
 
@@ -63,11 +67,12 @@ namespace SiteCrower.Core
                     linkToVisit = this.linkDispatcher.DecorateUrl(linkToVisit);
                     content = this.webClient.DownloadString(linkToVisit);
 
-                    // Summary data
+                    // Statistics
                     result.Finished = DateTime.Now - requestStart;
-                    int kbPerSecond = (int)(((content.Length * sizeof(char)) / 1024) / result.Finished.TotalSeconds);
-                    this.AvgDownloadSpeed = (this.AvgDownloadSpeed + kbPerSecond) / 2;
-                    this.AvgResponseTime = TimeSpan.FromMilliseconds((this.AvgResponseTime.TotalMilliseconds + result.Finished.TotalMilliseconds) / 2);
+                    int kBytesPerSecond = (int)(((content.Length * sizeof(char)) / 1024) / result.Finished.TotalSeconds);
+                    this.totalKBytesPerSecondReceived += kBytesPerSecond;
+                    this.totalDownloadSpeedsTimes += (int)result.Finished.TotalMilliseconds;
+                    this.LinksProcessed++;
 
                     openIndex = content.IndexOf(pattern) + pattern.Length;
                     while (openIndex != -1)
