@@ -9,6 +9,7 @@ namespace SiteCrower.Core
     // TODO: 
     // 1. Make it asyncronous
     // 2. use HttpClient insead of WebClient
+    // 3. VisitedUrls should be use instead of LinksProcessed
     public class RequestProcessor
     {
         private readonly string pattern = "href=\"";
@@ -16,7 +17,6 @@ namespace SiteCrower.Core
 
         private Queue<string> links;
         private WebClient webClient;
-        private IList<string> visited;
         private LinkDispatcher linkDispatcher;
         private readonly string root;
         
@@ -26,8 +26,8 @@ namespace SiteCrower.Core
 
         public event EventHandler<ProcessResult> RequestProceed;
         public event EventHandler<TimeSpan> Finished;
-
-        public int OkUrls { get { return this.LinksProcessed - (ErrorUrls.Count + FailedUrls.Count); } }
+        
+        public ICollection<string> VisitedUrls { get; private set; }
 
         public ICollection<string> ErrorUrls { get; private set; }
 
@@ -47,7 +47,7 @@ namespace SiteCrower.Core
             this.webClient = new WebClient();
             this.root = this.EnsureProtocol(siteRoot);
             this.links = new Queue<string>(new string[] { root });
-            this.visited = new List<string>();
+            this.VisitedUrls = new HashSet<string>();
             this.linkDispatcher = new LinkDispatcher(root);
             this.ErrorUrls = new HashSet<string>();
             this.FailedUrls = new HashSet<string>();
@@ -91,7 +91,7 @@ namespace SiteCrower.Core
                         if (ShouldVisit(childLink))
                         {
                             this.links.Enqueue(childLink);
-                            this.visited.Add(childLink);
+                            this.VisitedUrls.Add(childLink);
                         }
 
                         openIndex++;
@@ -122,7 +122,7 @@ namespace SiteCrower.Core
         /// </summary>
         private bool ShouldVisit(string link)
         {
-            if (!string.IsNullOrEmpty(link) && !escapeLinks.Contains(link) && !visited.Contains(link))
+            if (!string.IsNullOrEmpty(link) && !escapeLinks.Contains(link) && !this.VisitedUrls.Contains(link))
             {
                 if (this.linkDispatcher.GetDomain(link) == this.linkDispatcher.GetDomain(root))
                 {
