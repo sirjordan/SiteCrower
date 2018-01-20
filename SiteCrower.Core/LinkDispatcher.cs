@@ -6,8 +6,6 @@ namespace SiteCrower.Core
     public class LinkDispatcher
     {
         private static readonly string validUrlPattern = @"^(http|https|ftp|)\://|[a-zA-Z0-9\-\.]+\.[a-zA-Z](:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*[^\.\,\)\(\s]$";
-        private static readonly string http = "http://";
-        private static readonly string https = "https://";
 
         private string root;
 
@@ -29,7 +27,7 @@ namespace SiteCrower.Core
         
         public string GetDomain(string rawUrl)
         {
-            if (rawUrl.StartsWith("/") || (!rawUrl.ToLower().StartsWith(http) && !rawUrl.ToLower().StartsWith(https))) 
+            if (rawUrl.StartsWith("/") || (!rawUrl.ToLower().StartsWith(Constants.Http) && !rawUrl.ToLower().StartsWith(Constants.Https))) 
             {
                 return GetDomain(root);
             }
@@ -42,15 +40,15 @@ namespace SiteCrower.Core
 
         public string DecorateUrl(string url)
         {
-            if (url.StartsWith("/") || (!url.ToLower().StartsWith(http) && !url.ToLower().StartsWith(https)))
+            if (url.StartsWith("/") || (!url.ToLower().StartsWith(Constants.Http) && !url.ToLower().StartsWith(Constants.Https)))
             {
                 string separator = url.StartsWith("/") ? "" : "/";
                 url = string.Format("{0}{1}{2}", GetDomain(root), separator, url);
             }
 
-            if (!url.ToLower().StartsWith(http))
+            if (!url.ToLower().StartsWith(Constants.Http))
             {
-                string prefix = http;
+                string prefix = Constants.Http;
                 if (url.StartsWith("/"))
                 {
                     prefix = "http:/";

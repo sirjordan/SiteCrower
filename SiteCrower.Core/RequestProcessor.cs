@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 namespace SiteCrower.Core
 {
@@ -21,11 +22,11 @@ namespace SiteCrower.Core
 
         public RequestProcessor(string siteRoot)
         {
-            this.links = new Queue<string>(new string[] { siteRoot });
-            this.webClient =  new WebClient();
-            this.visited = new List<string>();
-            this.root = siteRoot;
-            this.linkDispatcher = new LinkDispatcher(siteRoot);
+            this.webClient = new WebClient();
+            this.root = this.EnsureProtocol(siteRoot);
+            this.links = new Queue<string>(new string[] { root });
+            this.visited = new List<string>(); ;
+            this.linkDispatcher = new LinkDispatcher(root);
         }
 
         public void Start()
@@ -43,7 +44,7 @@ namespace SiteCrower.Core
 
                 try
                 {
-                    linkToVisit = linkDispatcher.DecorateUrl(linkToVisit);                   
+                    linkToVisit = linkDispatcher.DecorateUrl(linkToVisit);
                     content = webClient.DownloadString(linkToVisit);
 
                     openIndex = content.IndexOf(pattern) + pattern.Length;
@@ -85,8 +86,37 @@ namespace SiteCrower.Core
                     return true;
                 }
             }
-            
+
             return false;
+        }
+
+        private string EnsureProtocol(string siteRoot)
+        {
+            if (siteRoot.Contains(Constants.Http))
+                return siteRoot;
+
+            try
+            {
+                try
+                {
+                    string https = $"{Constants.Https}{siteRoot}";
+                    this.webClient.DownloadString(https);
+
+                    return https;
+                }
+                catch (WebException)
+                {
+                    string http = $"{Constants.Http}{siteRoot}";
+                    this.webClient.DownloadString(http);
+
+                    return http;
+                }
+               
+            }
+            catch (WebException webEx)
+            {
+                throw new ApplicationException("Invalid root address", webEx);
+            }
         }
     }
 }

@@ -19,9 +19,16 @@ namespace SiteCrower.ConsoleClient
 
             siteRoot = Console.ReadLine();
 
-            var requestProcessor = new RequestProcessor(siteRoot);
-            requestProcessor.RequestProceed += RequestProcessor_RequestRequestProceed;
-            requestProcessor.Start();
+            try
+            {
+                var requestProcessor = new RequestProcessor(siteRoot);
+                requestProcessor.RequestProceed += RequestProcessor_RequestRequestProceed;            
+                requestProcessor.Start();
+            }
+            catch (ApplicationException appEx)
+            {
+                Console.WriteLine(appEx.Message);
+            }
         }
 
         private static void RequestProcessor_RequestRequestProceed(object sender, ProcessResult e)
