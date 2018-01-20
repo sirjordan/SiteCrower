@@ -16,13 +16,19 @@ namespace SiteCrower.Core
         private IList<string> visited;
         private LinkDispatcher linkDispatcher;
         private readonly string root;
-
+        
         private DateTime startTime;
         private int totalKBytesPerSecondReceived;
         private int totalDownloadSpeedsTimes;
 
         public event EventHandler<ProcessResult> RequestProceed;
         public event EventHandler<TimeSpan> Finished;
+
+        public int OkUrls { get; private set; }
+
+        public int ErrorUrls { get; private set; }
+
+        public int FailedUrls { get; private set; }
 
         /// <summary>
         /// Miliseconds
@@ -64,6 +70,8 @@ namespace SiteCrower.Core
 
                 try
                 {
+                    this.LinksProcessed++;
+
                     linkToVisit = this.linkDispatcher.DecorateUrl(linkToVisit);
                     content = this.webClient.DownloadString(linkToVisit);
 
@@ -72,7 +80,6 @@ namespace SiteCrower.Core
                     int kBytesPerSecond = (int)(((content.Length * sizeof(char)) / 1024) / result.Finished.TotalSeconds);
                     this.totalKBytesPerSecondReceived += kBytesPerSecond;
                     this.totalDownloadSpeedsTimes += (int)result.Finished.TotalMilliseconds;
-                    this.LinksProcessed++;
 
                     openIndex = content.IndexOf(pattern) + pattern.Length;
                     while (openIndex != -1)
@@ -90,14 +97,17 @@ namespace SiteCrower.Core
                     }
 
                     result.Status = ProcessResultStatus.Ok;
+                    this.OkUrls++;
                 }
                 catch (WebException)
                 {
                     result.Status = ProcessResultStatus.Fail;
+                    this.FailedUrls++;
                 }
                 catch (Exception)
                 {
                     result.Status = ProcessResultStatus.Error;
+                    this.ErrorUrls++;
                 }
 
                 this.RequestProceed?.Invoke(this, result);
