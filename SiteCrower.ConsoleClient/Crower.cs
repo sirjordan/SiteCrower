@@ -8,12 +8,10 @@ namespace SiteCrower.ConsoleClient
     {
         static string siteRoot;
         static int urlProcessed = 0;
-        static DateTime start;
+        static RequestProcessor requestProcessor;
 
         static void Main()
         {
-            start = DateTime.Now;
-
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write("Site Root:");
 
@@ -21,26 +19,28 @@ namespace SiteCrower.ConsoleClient
 
             try
             {
-                var requestProcessor = new RequestProcessor(siteRoot);
-                requestProcessor.RequestProceed += RequestProcessor_RequestRequestProceed;            
+                requestProcessor = new RequestProcessor(siteRoot);
+                requestProcessor.RequestProceed += RequestProcessor_RequestRequestProceed;
+                requestProcessor.Finished += RequestProcessor_Finished;          
                 requestProcessor.Start();
             }
             catch (ApplicationException appEx)
             {
                 Console.WriteLine(appEx.Message);
             }
+
+            Console.WriteLine();
+        }
+
+        private static void RequestProcessor_Finished(object sender, TimeSpan e)
+        {
+            WriteTitle();
+            Console.WriteLine($"Finished in { string.Format("{0:0.0}", e.TotalSeconds)} seconds");
         }
 
         private static void RequestProcessor_RequestRequestProceed(object sender, ProcessResult e)
         {
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Clear();
-
-            Console.WriteLine(siteRoot);
-            Console.WriteLine();
-
-            Console.WriteLine($"Url processed: {++urlProcessed} @ {string.Format("{0:0.0}", (DateTime.Now - start).TotalSeconds)} seconds");
-            Console.WriteLine();
+            WriteTitle();
 
             Console.Write($"Processing: {e.Url}");
 
@@ -57,8 +57,21 @@ namespace SiteCrower.ConsoleClient
                     break;
             }
 
-            Console.WriteLine(string.Format("...{0}", e.Status));
+            Console.Write($"...{e.Status}");
             Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine($" ({e.Finished.Milliseconds} ms)");
+        }
+
+        private static void WriteTitle()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Clear();
+
+            Console.WriteLine(siteRoot);
+            Console.WriteLine();
+
+            Console.WriteLine($"Url Processed: {++urlProcessed} | Avg Responce: {requestProcessor.AvgResponseTime.TotalMilliseconds} ms | Avg Speed: {requestProcessor.AvgDownloadSpeed} KB/s");
+            Console.WriteLine();
         }
     }
 }

@@ -17,7 +17,20 @@ namespace SiteCrower.Core
         private LinkDispatcher linkDispatcher;
         private readonly string root;
 
+        private DateTime startTime;
+
         public event EventHandler<ProcessResult> RequestProceed;
+        public event EventHandler<TimeSpan> Finished;
+
+        /// <summary>
+        /// Miliseconds
+        /// </summary>
+        public TimeSpan AvgResponseTime { get; private set; }
+
+        /// <summary>
+        /// KB / s
+        /// </summary>
+        public int AvgDownloadSpeed { get; private set; }
 
         public RequestProcessor(string siteRoot)
         {
@@ -30,21 +43,31 @@ namespace SiteCrower.Core
 
         public void Start()
         {
+            startTime = DateTime.Now;
+
             string linkToVisit;
             string content;
             string childLink;
             int openIndex;
             int closeIndex;
+            DateTime requestStart;
 
             while (this.links.Count > 0)
             {
                 linkToVisit = this.links.Dequeue();
+                requestStart = DateTime.Now;
                 ProcessResult result = new ProcessResult() { Url = linkToVisit };
 
                 try
                 {
                     linkToVisit = this.linkDispatcher.DecorateUrl(linkToVisit);
                     content = this.webClient.DownloadString(linkToVisit);
+
+                    // Summary data
+                    result.Finished = DateTime.Now - requestStart;
+                    int kbPerSecond = (int)(((content.Length * sizeof(char)) / 1024) / result.Finished.TotalSeconds);
+                    this.AvgDownloadSpeed = (this.AvgDownloadSpeed + kbPerSecond) / 2;
+                    this.AvgResponseTime = TimeSpan.FromMilliseconds((this.AvgResponseTime.TotalMilliseconds + result.Finished.TotalMilliseconds) / 2);
 
                     openIndex = content.IndexOf(pattern) + pattern.Length;
                     while (openIndex != -1)
@@ -72,8 +95,10 @@ namespace SiteCrower.Core
                     result.Status = ProcessResultStatus.Error;
                 }
 
-                this.RequestProceed(this, result);
+                this.RequestProceed?.Invoke(this, result);
             }
+
+            this.Finished?.Invoke(this, DateTime.Now - startTime);
         }
 
         /// <summary>
@@ -116,7 +141,7 @@ namespace SiteCrower.Core
 
                     return http;
                 }
-               
+
             }
             catch (WebException webEx)
             {
