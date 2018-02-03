@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 
 namespace SiteCrower.Core
 {
@@ -19,6 +21,7 @@ namespace SiteCrower.Core
         private WebClient webClient;
         private LinkDispatcher linkDispatcher;
         private readonly string root;
+        private FileManager fileManager;
         
         private DateTime startTime;
         private int totalKBytesPerSecondReceived;
@@ -51,6 +54,7 @@ namespace SiteCrower.Core
             this.linkDispatcher = new LinkDispatcher(root);
             this.ErrorUrls = new HashSet<string>();
             this.FailedUrls = new HashSet<string>();
+            this.fileManager = new FileManager(root);
         }
 
         public void Start()
@@ -75,7 +79,7 @@ namespace SiteCrower.Core
                     this.LinksProcessed++;
 
                     linkToVisit = this.linkDispatcher.DecorateUrl(linkToVisit);
-                    content = this.webClient.DownloadString(linkToVisit);
+                    content = this.Get(linkToVisit);
 
                     // Statistics
                     result.Finished = DateTime.Now - requestStart;
@@ -99,13 +103,20 @@ namespace SiteCrower.Core
                     }
 
                     result.Status = ProcessResultStatus.Ok;
+
+                    // TODO: Test only
+                    if (Settings.SaveContent)
+                    {
+                        byte[] bytes = Encoding.UTF8.GetBytes(content);
+                        this.fileManager.Save(bytes, linkToVisit);
+                    }
                 }
                 catch (WebException)
                 {
                     result.Status = ProcessResultStatus.Fail;
                     this.FailedUrls.Add(linkToVisit);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     result.Status = ProcessResultStatus.Error;
                     this.ErrorUrls.Add(linkToVisit);
@@ -162,6 +173,19 @@ namespace SiteCrower.Core
             catch (WebException webEx)
             {
                 throw new ApplicationException("Invalid root address", webEx);
+            }
+        }
+
+        private string Get(string uri)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            using (Stream stream = response.GetResponseStream())
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                return reader.ReadToEnd();
             }
         }
     }
