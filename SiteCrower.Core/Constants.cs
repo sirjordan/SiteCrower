@@ -4,6 +4,6 @@
     {
         public static string Http { get; } = "http://";
 
-        public static string Https { get; } = "https://";
+        public static string Https { get; } = "https://"; 
     }
 }
