@@ -1,5 +1,4 @@
 # SiteCrower
-SiteCrower
 
 - Crow a website by its links.
 - Check working links
